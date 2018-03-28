@@ -30,5 +30,5 @@ name = "lstm_lm"
 path = "examples/lstm_lm.rs"
 
 [features]
-default-features = []
+default-features = ["blas"]
 blas = ["ndarray/blas", "blas-sys"]
