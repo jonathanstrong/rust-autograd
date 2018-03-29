@@ -31,27 +31,29 @@ fn main()
     // -- graph def --
     let ref x = ag::placeholder(&[-1, 28 * 28]);
     let ref y = ag::placeholder(&[-1, 1]);
-    let ref w = ag::variable(ag::ndarray_ext::glorot_uniform(&[28 * 28, 10]));
-    let ref b = ag::variable(ag::ndarray_ext::zeros(&[1, 10]));
-    let ref z = ag::matmul(x, w) + b;
-    //let ref w2 = ag::variable(ag::ndarray_ext::glorot_uniform(&[32, 10]));
-    //let ref b2 = ag::variable(ag::ndarray_ext::zeros(&[1, 10]));
-    //let ref z2 = ag::matmul(z, w2) + b2;
-    //let ref loss = ag::sparse_softmax_cross_entropy(z2, y);
-    let ref loss = ag::sparse_softmax_cross_entropy(z, y);
+    let ref w = ag::variable(ag::ndarray_ext::glorot_uniform(&[28 * 28, 16]));
+    let ref b = ag::variable(ag::ndarray_ext::zeros(&[1, 16]));
+    let ref h = ag::matmul(x, w) + b;
+    let ref z = ag::relu(h);
+    let ref w2 = ag::variable(ag::ndarray_ext::glorot_uniform(&[16, 10]));
+    let ref b2 = ag::variable(ag::ndarray_ext::zeros(&[1, 10]));
+    let ref h2 = ag::matmul(z, w2) + b2;
+    let ref z2 = ag::softmax(h2, -1);
+    let ref loss = ag::sparse_softmax_cross_entropy(z2, y);
+    //let ref loss = ag::sparse_softmax_cross_entropy(z, y);
     let ref mean_loss = ag::reduce_mean(loss, &[0, 1], false);
-    //let ref params = [w, b, w2, b2];
-    let ref params = [w, b];
+    let ref params = [w, b, w2, b2];
+    //let ref params = [w, b];
     let ref grads = ag::grad(&[mean_loss], params);
-    let ref predictions = ag::argmax(z, -1, true);
-    //let ref predictions = ag::argmax(z2, -1, true);
+    //let ref predictions = ag::argmax(z, -1, true);
+    let ref predictions = ag::argmax(z2, -1, true);
     let ref accuracy = ag::reduce_mean(&ag::equal(predictions, y), &[0, 1], false);
     let mut adam = ag::gradient_descent_ops::Adam::default();
     let ref update_ops = adam.compute_updates(params, grads);
 
     // -- actual training --
-    let max_epoch = 80;
-    let batch_size = 192isize;
+    let max_epoch = 400;
+    let batch_size = 64;
     let num_samples = x_train.shape()[0];
     let num_batches = num_samples / batch_size as usize;
 
@@ -66,6 +68,10 @@ fn main()
             }
         });
         println!("finish epoch {}", epoch);
+        println!(
+            "test accuracy: {:?}",
+            accuracy.eval(&[(x, &x_test), (y, &y_test)])
+        );
     }
 
     // -- test --
