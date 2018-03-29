@@ -29,6 +29,10 @@ path = "examples/mlp_mnist.rs"
 name = "lstm_lm"
 path = "examples/lstm_lm.rs"
 
+[[example]]
+name = "scratchpad"
+path = "examples/scratchpad.rs"
+
 [features]
 default-features = ["blas"]
 blas = ["ndarray/blas", "blas-sys"]
