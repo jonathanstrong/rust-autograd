@@ -1,6 +1,6 @@
 extern crate autograd as g;
-//#[macro_use(s)]
-extern crate ndarray;
+#[macro_use(s)]
+extern crate ndarray as nd;
 
 use g::gradient_descent_ops::Optimizer;
 use g::Tensor;
@@ -31,18 +31,27 @@ fn main() {
     let ref params = [w0, b0, w1, b1];
     let ref grads = g::grad(&[mean_loss], params);
     let mut adam = g::gradient_descent_ops::Adam::default();
-    let ref updates = adam.compute_updates(params, grads);
+    let mut updates = adam.compute_updates(params, grads);
 
     let xi = arr(vec![0.0; 32], (1, 32));
     let yi = arr(vec![0.0, 0.5, 1.0], (1, 3));
 
-    fn arr(xs: Vec<f32>, shape: (usize, usize)) -> ndarray::Array<f32, ndarray::IxDyn> {
-        ndarray::Array::from_vec(xs).into_shape(shape).unwrap().into_dyn()
+    fn arr(xs: Vec<f32>, shape: (usize, usize)) -> nd::Array<f32, nd::IxDyn> {
+        nd::Array::from_vec(xs).into_shape(shape).unwrap().into_dyn()
     }
+
+    updates.push(mean_loss * 1.0);
 
     //g::run(updates, &[(x, &ndarray::arr1(&xi[..]).into_dyn()), (y, &ndarray::arr1(&yi[..]).into_dyn())]);
     //let res = g::eval(updates, &[(x, &xi), (y, &yi)]);
-    g::run(updates, &[(x, &xi), (y, &yi)]);
+    //g::run(&updates, &[(x, &xi), (y, &yi)]);
+    let mut res = g::eval(&updates, &[(x, &xi), (y, &yi)]);
+    let last = res.pop().unwrap().unwrap();
+    println!("{:?} {:?}", last, last.shape());
+    let batch_loss = last.iter().next();
+    //let batch_loss = //[0];
+    println!("{:?}", batch_loss);
+    //println!("{}", res.last().unwrap().unwrap().clone().slice(s![0..1]));
     //println!("{:?}", ndarray::aview1(&xi).into_shape((1, 32)).unwrap().into_dyn());
     //println!("{:?}", view(&xi, (1, 32)));
 
