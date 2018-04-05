@@ -254,9 +254,12 @@ pub fn symbolic_gradients(
         .map(|x| {
             let xk = x.resource_lookup_key.get();
             assert!(
-                xk < path.len() && Rc::ptr_eq(x, path[xk].node),
-                "Not differentiable with given tensor(s)."
+                xk < path.len(), //&& Rc::ptr_eq(x, path[xk].node),
+                "Not differentiable with given tensor(s). (xk = {}, path.len() = {}; {:?})",
+                xk, path.len(), x
             );
+            assert!(Rc::ptr_eq(x, path[xk].node),
+                    "Expected inner TensorCore ptr to point to same object as path[xk].node");
             let info = &mut path[xk];
             assert!(
                 info.default_grad.is_none(),
